@@ -27,6 +27,10 @@ go.work.sum
 # env file
 .env
 
+# Local application config (may contain secrets). Commit config.example.yaml only.
+config.yaml
+config.yml
+
 # Editor/IDE
 # .idea/
 # .vscode/
