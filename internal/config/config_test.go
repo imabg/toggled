@@ -63,6 +63,30 @@ log:
 		}
 	})
 
+	t.Run("DATABASE_URL overrides postgres url", func(t *testing.T) {
+		path := writeConfig(t, `
+env: local
+http:
+  port: 9090
+database:
+  type: postgres
+  postgres:
+    url: postgres://toggled:toggled@localhost:5432/toggled?sslmode=disable
+log:
+  level: info
+`)
+		override := "postgres://override:override@db.internal:5432/toggled"
+		t.Setenv(DatabaseURLEnv, override)
+
+		cfg, err := Load(path)
+		if err != nil {
+			t.Fatalf("Load() unexpected error: %v", err)
+		}
+		if cfg.PostgresURL() != override {
+			t.Errorf("PostgresURL() = %q, want %q", cfg.PostgresURL(), override)
+		}
+	})
+
 	t.Run("omitted fields are not defaulted", func(t *testing.T) {
 		path := writeConfig(t, `
 database:

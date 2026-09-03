@@ -4,12 +4,17 @@ package config
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/viper"
 )
 
 const DefaultPath = "config.yaml"
+
+// DatabaseURLEnv overrides database.postgres.url when set, so the DSN can
+// come from the environment (e.g. containers) instead of the config file.
+const DatabaseURLEnv = "DATABASE_URL"
 
 // Env is the runtime environment. It selects log encoding and can grow
 // additional environment-specific behaviour later.
@@ -80,6 +85,10 @@ func Load(path string) (*Config, error) {
 		dc.ErrorUnused = true
 	}); err != nil {
 		return nil, fmt.Errorf("parse config %s: %w", path, err)
+	}
+
+	if url := os.Getenv(DatabaseURLEnv); url != "" {
+		cfg.Database.Postgres.URL = url
 	}
 
 	if err := cfg.validate(); err != nil {
