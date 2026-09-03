@@ -23,6 +23,7 @@ http:
 #       url: user:pass@tcp(localhost:3306)/toggled
 database:
   type: postgres
+  # The DATABASE_URL environment variable overrides this value when set.
   postgres:
     url: postgres://toggled:toggled@localhost:5432/toggled?sslmode=disable
 
