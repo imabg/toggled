@@ -5,14 +5,9 @@ import "net/http"
 // NewRouter returns the root HTTP handler with all routes registered.
 func NewRouter(db Pinger) http.Handler {
 	mux := http.NewServeMux()
-	registerPublicRoutes(mux, db)
+	mux.HandleFunc("GET /healthz", healthz(db))
 	registerPrivateRoutes(mux, db)
 	return mux
-}
-
-// registerPublicRoutes registers endpoints that require no authentication.
-func registerPublicRoutes(mux *http.ServeMux, db Pinger) {
-	mux.HandleFunc("GET /healthz", healthz(db))
 }
 
 // registerPrivateRoutes registers endpoints that require authentication.

@@ -12,21 +12,21 @@ import (
 // it as the process-wide default (zap.L / zap.S).
 // Production uses JSON encoding. Local env or debug level uses a
 // human-readable console encoder.
-func NewLogger(cfg *Config) (*zap.Logger, error) {
+func NewLogger(cfg *Config) error {
 	zapCfg, err := buildZapConfig(cfg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	log, err := zapCfg.Build()
 	if err != nil {
-		return nil, fmt.Errorf("config: build logger: %w", err)
+		return fmt.Errorf("config: build logger: %w", err)
 	}
 	zap.ReplaceGlobals(log)
-	return log, nil
+	return nil
 }
 
 func buildZapConfig(cfg *Config) (zap.Config, error) {
-	level, err := parseLevel(cfg.Log.Level)
+	level, err := parseLevel(cfg.Level)
 	if err != nil {
 		return zap.Config{}, err
 	}
@@ -47,7 +47,7 @@ func buildZapConfig(cfg *Config) (zap.Config, error) {
 func parseLevel(level string) (zapcore.Level, error) {
 	var l zapcore.Level
 	if err := l.UnmarshalText([]byte(strings.ToLower(level))); err != nil {
-		return 0, fmt.Errorf("config: log.level must be debug, info, warn, or error")
+		return 0, fmt.Errorf("config: level must be debug, info, warn, or error")
 	}
 	return l, nil
 }

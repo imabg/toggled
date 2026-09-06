@@ -1,0 +1,14 @@
+---
+globs: *.go
+alwaysApply: false
+---
+- Always use `use-modern-go` skill working on .go files
+- Never pass full request(*http.Request) to methods, extract the needed keys and only passed them
+- Don't use deprecated versions of libraries
+- Only use uber-mock package for generating mock file for package
+- Use format for creating mock file package/mocks/package_mock.go
+- Use format for creating test file package/package_test.go
+- Prefer to write test-cases in parallel, and self independent which does not share global common variables or anything that can cause issue while running them in parallel via `t.Parallel()`
+- Create unit-tests in Parent-child structure
+- Write smaller test cases, prefer high quality test cases and integration test cases for user flow
+- Use Interface pattern for dependency injection

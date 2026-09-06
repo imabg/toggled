@@ -1,0 +1,16 @@
+---
+alwaysApply: true
+---
+
+- `./go-guideline.mdc`
+- Avoid bigger and heavy joins on tables in Postgres
+- Prioritize simple and clear solution instead of complex and bulky one
+- For complex tasks, break them down into smaller ones
+- Don't assume anything, ask relevant questions in that case
+- Delegate independent tasks to sub-agents
+
+## Guards
+
+- Don't go for bigger test cases
+- Avoid installing unnecessary libraries
+ 

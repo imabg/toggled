@@ -1,4 +1,4 @@
-// Package config loads application configuration from a YAML file via Viper.
+// Package config loads application configuration from a YAML file.
 package config
 
 import (
@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/go-viper/mapstructure/v2"
-	"github.com/spf13/viper"
+	"go.yaml.in/yaml/v3"
 )
 
 const DefaultPath = "config.yaml"
 
-// DatabaseURLEnv overrides database.postgres.url when set, so the DSN can
-// come from the environment (e.g. containers) instead of the config file.
+// DatabaseURLEnv overrides database.url when set, so the DSN can come from
+// the environment (e.g. containers) instead of the config file.
 const DatabaseURLEnv = "DATABASE_URL"
 
 // Env is the runtime environment. It selects log encoding and can grow
@@ -25,70 +24,47 @@ const (
 	EnvProduction Env = "production"
 )
 
-// DatabaseType selects which nested database block is active.
-// Add a new constant and a sibling YAML block when introducing another engine.
-type DatabaseType string
-
-const (
-	DatabaseTypePostgres DatabaseType = "postgres"
-)
-
-// Config is the root configuration document.
+// Config is the root configuration document. The section structs are
+// embedded, so their fields are promoted: cfg.Port, cfg.URL, cfg.Level.
 type Config struct {
-	Env      Env            `mapstructure:"env"`
-	HTTP     HTTPConfig     `mapstructure:"http"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Log      LogConfig      `mapstructure:"log"`
+	Env            Env `yaml:"env"`
+	HTTPConfig     `yaml:",inline"`
+	DatabaseConfig `yaml:",inline"`
+	LogConfig      `yaml:",inline"`
 }
 
 // HTTPConfig holds HTTP server settings.
 type HTTPConfig struct {
-	Port int `mapstructure:"port"`
+	Port int `yaml:"port"`
 }
 
-// DatabaseConfig is a typed backend selector.
-//
-//	database:
-//	  type: postgres
-//	  postgres:
-//	    url: postgres://...
-//
-// A future MySQL backend would add `type: mysql` and a `mysql:` block
-// without changing existing keys.
+// DatabaseConfig holds database connection settings.
 type DatabaseConfig struct {
-	Type     DatabaseType   `mapstructure:"type"`
-	Postgres PostgresConfig `mapstructure:"postgres"`
-}
-
-// PostgresConfig holds Postgres connection settings.
-type PostgresConfig struct {
-	URL string `mapstructure:"url"`
+	URL string `yaml:"url"`
 }
 
 // LogConfig holds logger settings.
 type LogConfig struct {
-	Level string `mapstructure:"level"`
+	Level string `yaml:"level"`
 }
 
 // Load reads and validates configuration from path.
 func Load(path string) (*Config, error) {
-	v := viper.New()
-	v.SetConfigFile(path)
-	v.SetConfigType("yaml")
-
-	if err := v.ReadInConfig(); err != nil {
+	f, err := os.Open(path)
+	if err != nil {
 		return nil, fmt.Errorf("read config %s: %w", path, err)
 	}
+	defer f.Close()
 
 	var cfg Config
-	if err := v.Unmarshal(&cfg, func(dc *mapstructure.DecoderConfig) {
-		dc.ErrorUnused = true
-	}); err != nil {
+	dec := yaml.NewDecoder(f)
+	dec.KnownFields(true)
+	if err := dec.Decode(&cfg); err != nil {
 		return nil, fmt.Errorf("parse config %s: %w", path, err)
 	}
 
 	if url := os.Getenv(DatabaseURLEnv); url != "" {
-		cfg.Database.Postgres.URL = url
+		cfg.URL = url
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -106,27 +82,17 @@ func (c *Config) validate() error {
 		errs = append(errs, fmt.Errorf("config: env must be %q or %q", EnvLocal, EnvProduction))
 	}
 
-	if c.HTTP.Port < 1 || c.HTTP.Port > 65535 {
-		errs = append(errs, fmt.Errorf("config: http.port must be between 1 and 65535"))
+	if c.Port < 1 || c.Port > 65535 {
+		errs = append(errs, fmt.Errorf("config: port must be between 1 and 65535"))
 	}
 
-	switch c.Database.Type {
-	case DatabaseTypePostgres:
-		if c.Database.Postgres.URL == "" {
-			errs = append(errs, fmt.Errorf("config: database.postgres.url is required"))
-		}
-	default:
-		errs = append(errs, fmt.Errorf("config: unsupported database.type %q", c.Database.Type))
+	if c.URL == "" {
+		errs = append(errs, fmt.Errorf("config: url is required"))
 	}
 
-	if _, err := parseLevel(c.Log.Level); err != nil {
+	if _, err := parseLevel(c.Level); err != nil {
 		errs = append(errs, err)
 	}
 
 	return errors.Join(errs...)
-}
-
-// PostgresURL returns the active Postgres DSN.
-func (c *Config) PostgresURL() string {
-	return c.Database.Postgres.URL
 }
