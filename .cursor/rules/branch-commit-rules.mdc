@@ -1,0 +1,10 @@
+---
+description: While creating branches and doing commit 
+alwaysApply: false
+---
+
+- Always ask for JIRA ticket before starting the new session, if not provided while starting working against a story
+- Create a new branch from `master` branch before starting working 
+  - Branch naming should follow the pattern: `ISSUE-TYPE/ISSUE-ID`  
+  - Commit message should follow the pattern: `ISSUE-ID-{short summary}`
+- Always create a PR once done with the work/task and mention the JIRA ticket in description
