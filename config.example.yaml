@@ -10,24 +10,13 @@
 #   production   - JSON structured logs
 env: local
 
-http:
-  # TCP port the API server listens on.
-  port: 8080
+# TCP port the API server listens on.
+port: 8080
 
-# Database backend. `type` selects which nested block is used.
-# To add another engine later, introduce a new type and a sibling block:
-#
-#   database:
-#     type: mysql
-#     mysql:
-#       url: user:pass@tcp(localhost:3306)/toggled
-database:
-  type: postgres
-  # The DATABASE_URL environment variable overrides this value when set.
-  postgres:
-    url: postgres://toggled:toggled@localhost:5432/toggled?sslmode=disable
+# Database connection. The DATABASE_URL environment variable overrides
+# this value when set.
+url: postgres://toggled:toggled@localhost:5432/toggled?sslmode=disable
 
-log:
-  # debug | info | warn | error
-  # debug also forces console encoding, even when env is production.
-  level: info
+# Log level: debug | info | warn | error
+# debug also forces console encoding, even when env is production.
+level: info

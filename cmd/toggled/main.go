@@ -26,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if _, err := config.NewLogger(cfg); err != nil {
+	if err := config.NewLogger(cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "toggled: %v\n", err)
 		os.Exit(1)
 	}
@@ -35,14 +35,14 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	pool, err := postgres.NewPool(ctx, cfg.PostgresURL())
+	pool, err := postgres.NewPool(ctx, cfg.URL)
 	if err != nil {
 		zap.L().Fatal("connect database", zap.Error(err))
 	}
 	defer pool.Close()
 
 	srv := &http.Server{
-		Addr:              fmt.Sprintf(":%d", cfg.HTTP.Port),
+		Addr:              fmt.Sprintf(":%d", cfg.Port),
 		Handler:           api.NewRouter(pool),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
@@ -58,7 +58,7 @@ func main() {
 
 	zap.L().Info("server starting",
 		zap.String("env", string(cfg.Env)),
-		zap.Int("port", cfg.HTTP.Port),
+		zap.Int("port", cfg.Port),
 	)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		zap.L().Fatal("http server", zap.Error(err))
